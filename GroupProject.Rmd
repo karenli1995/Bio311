@@ -13,3 +13,23 @@ library(stringr)
 library(dendextend)
 library(RColorBrewer)
 ```
+
+##Data Processing
+```{r csv, echo=FALSE}
+huebert_expr <- read.csv("huebert-2012-expression.csv", fileEncoding = "latin1")
+
+huebert_expr_trans <- t(huebert_expr)
+huebert_expmt <- huebert_expr_trans[c(1,7:28),]
+huebert_expmt <- as.data.frame(huebert_expmt)
+
+huebert_rows <- rownames(huebert_expmt)
+split_huebert_rows <- strsplit(huebert_rows,"[.]")
+split_times_huebert <- lapply(split_huebert_rows, function(x) return(x[3]))
+
+huebert_times <- as.character(split_times_huebert)
+huebert_expmt2 <- mutate(huebert_expmt, row = rownames(huebert_expmt), time = huebert_times)
+
+huebert_expmt2 <- huebert_expmt2[,c(11236:11237, 1:11235)]
+
+```
+
