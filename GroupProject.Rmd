@@ -1,10 +1,9 @@
 # Bio311
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r libraries, results='hide'}
+library(gplots)
 library(ggplot2)
 library(RColorBrewer)
 library(dplyr)
@@ -12,24 +11,90 @@ library(tidyr)
 library(stringr)
 library(dendextend)
 library(RColorBrewer)
+library(gProfileR)
+library(org.Sc.sgd.db)
 ```
 
-##Data Processing
-```{r csv, echo=FALSE}
-huebert_expr <- read.csv("huebert-2012-expression.csv", fileEncoding = "latin1")
+## Data Processing
+```{r data, echo=FALSE, warning=FALSE}
+huebert_expr <- read.csv("huebert-2012-expression.csv", 
+                         stringsAsFactors = FALSE, 
+                         fileEncoding = "latin1")
 
-huebert_expr_trans <- t(huebert_expr)
-huebert_expmt <- huebert_expr_trans[c(1,7:28),]
-huebert_expmt <- as.data.frame(huebert_expmt)
+# transpose and convert matrix to data frame
+huebert_expmt <- huebert_expr[,7:28] %>% sapply(as.numeric) %>% 
+  t() %>% as.data.frame()
 
-huebert_rows <- rownames(huebert_expmt)
-split_huebert_rows <- strsplit(huebert_rows,"[.]")
-split_times_huebert <- lapply(split_huebert_rows, function(x) return(x[3]))
+# use this for correlation matrix (no time column)
+colnames(huebert_expmt) <- huebert_expr$ID
 
-huebert_times <- as.character(split_times_huebert)
-huebert_expmt2 <- mutate(huebert_expmt, row = rownames(huebert_expmt), time = huebert_times)
+#random sampling of columns from huebert_expmt
+huebert_expmt_sample <- huebert_expmt[,sample(1:ncol(huebert_expmt), 2000,
+  	replace=FALSE)]
 
+# split rownames to get time
+huebert_times <- colnames(huebert_expr)[7:28] %>% strsplit("[.T]") %>% 
+  sapply(function(x) as.numeric(x[4]))
+# add the experiment condition and time columns
+huebert_expmt2 <- huebert_expmt
+huebert_expmt2$expt <- colnames(huebert_expr)[7:28]
+huebert_expmt2$time <- huebert_times
+# reorder
 huebert_expmt2 <- huebert_expmt2[,c(11236:11237, 1:11235)]
+```
 
+```{r csv, echo=FALSE}
+huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "latin1")
+```
+
+## Hierarchical Clustering
+```{r hier_cluster, warning=FALSE}
+huebert.cor <- huebert_expmt_sample %>% cor(use = "pairwise.complete.obs")
+huebert.cor[is.na(huebert.cor)] <- -1  # assume all NA's in correlation matrix is -1
+huebert.clust <- hclust(as.dist(1 - huebert.cor), method = "complete")
+huebert.dend <- as.dendrogram(huebert.clust)
+
+color.dend <- color_branches(huebert.dend, h = 1.7, col = brewer.pal(8, "Dark2"))
+plot(color.dend, leaflab = "none")
+```
+
+```{r cluster_info, warning=FALSE}
+clusters1 <- cutree(color.dend, h = 1.7, order_clusters_as_data = FALSE)
+subtrees1 <- cut(color.dend, h = 1.7)
+sort(table(clusters1),decreasing = TRUE)  # get the cluster sizes 
+labels(subtrees1$lower[[1]])
+gene.clu1 <- lapply(subtrees1$lower, labels)
+#gene.clu1[[5]] # get cluster 5 genes
+```
+
+## Correlation Heatmap
+```{r corr_heatmap, warning=FALSE}
+color.scheme <- rev(brewer.pal(8,"RdBu"))
+
+heatmap.2(huebert.cor, 
+          Rowv = ladderize(huebert.dend), 
+          Colv = ladderize(huebert.dend), 
+          dendrogram = "both", 
+          revC = TRUE,  # rev column order of dendrogram so conforms to natural representation
+          trace = "none", 
+          density.info = "none",
+          col = color.scheme, key = FALSE,
+          labRow = FALSE, labCol = FALSE)
+```
+
+## K-medoid clustering
+```{r k_clust, warning=FALSE}
+huebert.dist <- as.dist(1 - huebert.cor)
+huebert.kmedoids <- pam(huebert.dist, 8) # create k-medoids clustering with 8 clusters
+huebert.kclusters <- huebert.kmedoids$cluster
+
+# reorder correlation matrix by ordering given by clustering
+huebert.kmedoids.cor <- huebert.cor[order(huebert.kclusters),order(huebert.kclusters)]
+
+heatmap.2(huebert.kmedoids.cor, Rowv = NULL, Colv = NULL, 
+          dendrogram = "none", 
+          trace = "none", density.info = "none",
+          col = color.scheme, key = FALSE,
+          labRow = FALSE, labCol = FALSE)
 ```
 
