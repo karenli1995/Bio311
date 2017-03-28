@@ -33,7 +33,7 @@ huebert_expmt <- huebert_expr_coding[,7:28] %>% sapply(as.numeric) %>%
 huebert_expmt <- huebert_expmt[, apply(huebert_expmt, 2, function(x) !any(is.na(x)))]
 
 #random sampling of columns from huebert_expmt
-huebert_expmt_sample <- huebert_expmt[,sample(1:ncol(huebert_expmt), 2500,
+huebert_expmt_sample <- huebert_expmt[,sample(1:ncol(huebert_expmt), 2000,
    	replace=FALSE)]
 
 # use this for correlation matrix (no time column)
