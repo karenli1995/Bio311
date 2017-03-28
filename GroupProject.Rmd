@@ -53,7 +53,7 @@ huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "l
 
 ## Hierarchical Clustering
 ```{r hier_cluster, warning=FALSE}
-huebert.cor <- huebert_expr_coding %>% cor(use = "pairwise.complete.obs")
+huebert.cor <- huebert_expmt %>% cor(use = "pairwise.complete.obs")
 huebert.cor[is.na(huebert.cor)] <- -1  # assume all NA's in correlation matrix is -1
 huebert.clust <- hclust(as.dist(1 - huebert.cor), method = "complete")
 huebert.dend <- as.dendrogram(huebert.clust)
