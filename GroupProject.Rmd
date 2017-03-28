@@ -12,6 +12,8 @@ library(tidyr)
 library(stringr)
 library(dendextend)
 library(RColorBrewer)
+library(gProfileR)
+library(org.Sc.sgd.db)
 ```
 
 ## Data Processing
@@ -39,6 +41,10 @@ colnames(huebert_expmt) <- huebert_expr$ID
 #reordering time columns to the front 
 huebert_expmt2 <- huebert_expmt2[,c(11236:11237, 1:11235)]
 
+```
+
+```{r csv, echo=FALSE}
+huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "latin1")
 ```
 
 ## Hierarchical Clustering
