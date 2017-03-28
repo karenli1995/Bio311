@@ -3,6 +3,7 @@
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+library(cluster)
 library(gplots)
 library(ggplot2)
 library(RColorBrewer)
@@ -37,7 +38,7 @@ huebert_times <- colnames(huebert_expr)[7:28] %>% strsplit("[.T]") %>%
   sapply(function(x) as.numeric(x[4]))
 # add the experiment condition and time columns
 huebert_expmt2 <- huebert_expmt
-huebert_expmt2$expt <- colnames(huebert_expr)[7:28]
+huebert_expmt2$expt <- c(rep("wildtype", 11), rep("msn24", 11))
 huebert_expmt2$time <- huebert_times
 # reorder
 huebert_expmt2 <- huebert_expmt2[,c(11236:11237, 1:11235)]
