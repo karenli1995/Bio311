@@ -3,6 +3,7 @@
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+library(cluster)
 library(gplots)
 library(ggplot2)
 library(RColorBrewer)
@@ -21,12 +22,15 @@ huebert_expr <- read.csv("huebert-2012-expression.csv",
                          stringsAsFactors = FALSE, 
                          fileEncoding = "latin1")
 
+#dataset containing only coding genes
+huebert_expr_coding <- huebert_expr[huebert_expr$coding.noncoding == "coding",]
+
 # transpose and convert matrix to data frame
-huebert_expmt <- huebert_expr[,7:28] %>% sapply(as.numeric) %>% 
+huebert_expmt <- huebert_expr_coding[,7:28] %>% sapply(as.numeric) %>% 
   t() %>% as.data.frame()
 
 # use this for correlation matrix (no time column)
-colnames(huebert_expmt) <- huebert_expr$ID
+colnames(huebert_expmt) <- huebert_expr_coding$ID
 
 #random sampling of columns from huebert_expmt
 huebert_expmt_sample <- huebert_expmt[,sample(1:ncol(huebert_expmt), 2000,
@@ -40,7 +44,7 @@ huebert_expmt2 <- huebert_expmt
 huebert_expmt2$expt <- colnames(huebert_expr)[7:28]
 huebert_expmt2$time <- huebert_times
 # reorder
-huebert_expmt2 <- huebert_expmt2[,c(11236:11237, 1:11235)]
+huebert_expmt2 <- huebert_expmt2[,c(6640:6641, 1:6639)]
 ```
 
 ```{r csv, echo=FALSE}
@@ -49,7 +53,7 @@ huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "l
 
 ## Hierarchical Clustering
 ```{r hier_cluster, warning=FALSE}
-huebert.cor <- huebert_expmt_sample %>% cor(use = "pairwise.complete.obs")
+huebert.cor <- huebert_expr_coding %>% cor(use = "pairwise.complete.obs")
 huebert.cor[is.na(huebert.cor)] <- -1  # assume all NA's in correlation matrix is -1
 huebert.clust <- hclust(as.dist(1 - huebert.cor), method = "complete")
 huebert.dend <- as.dendrogram(huebert.clust)
@@ -85,7 +89,7 @@ heatmap.2(huebert.cor,
 ## K-medoid clustering
 ```{r k_clust, warning=FALSE}
 huebert.dist <- as.dist(1 - huebert.cor)
-huebert.kmedoids <- pam(huebert.dist, 8) # create k-medoids clustering with 8 clusters
+huebert.kmedoids <- pam(huebert.dist, 19) # create k-medoids clustering with 8 clusters
 huebert.kclusters <- huebert.kmedoids$cluster
 
 # reorder correlation matrix by ordering given by clustering
