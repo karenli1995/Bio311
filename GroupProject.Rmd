@@ -29,11 +29,15 @@ huebert_expr_coding <- huebert_expr[huebert_expr$coding.noncoding == "coding",]
 huebert_expmt <- huebert_expr_coding[,7:28] %>% sapply(as.numeric) %>% 
   t() %>% as.data.frame()
 
-# use this for correlation matrix (no time column)
-colnames(huebert_expmt) <- huebert_expr_coding$ID
-
 # remove genes with NA's
 huebert_expmt <- huebert_expmt[, apply(huebert_expmt, 2, function(x) !any(is.na(x)))]
+
+#random sampling of columns from huebert_expmt
+huebert_expmt_sample <- huebert_expmt[,sample(1:ncol(huebert_expmt), 2500,
+   	replace=FALSE)]
+
+# use this for correlation matrix (no time column)
+colnames(huebert_expmt_sample) <- huebert_expmt$ID
 
 # split rownames to get time
 huebert_times <- colnames(huebert_expr)[7:28] %>% strsplit("[.T]") %>% 
