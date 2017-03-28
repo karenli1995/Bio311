@@ -32,10 +32,6 @@ huebert_expmt <- huebert_expr_coding[,7:28] %>% sapply(as.numeric) %>%
 # use this for correlation matrix (no time column)
 colnames(huebert_expmt) <- huebert_expr_coding$ID
 
-#random sampling of columns from huebert_expmt
-huebert_expmt_sample <- huebert_expmt[,sample(1:ncol(huebert_expmt), 2000,
-  	replace=FALSE)]
-
 # split rownames to get time
 huebert_times <- colnames(huebert_expr)[7:28] %>% strsplit("[.T]") %>% 
   sapply(function(x) as.numeric(x[4]))
