@@ -14,22 +14,39 @@ library(dendextend)
 library(RColorBrewer)
 ```
 
-##Data Processing
+## Data Processing
 ```{r csv, echo=FALSE}
 huebert_expr <- read.csv("huebert-2012-expression.csv", fileEncoding = "latin1")
 
+#convert matrix to data frame
 huebert_expr_trans <- t(huebert_expr)
-huebert_expmt <- huebert_expr_trans[c(1,7:28),]
+huebert_expmt <- huebert_expr_trans[c(7:28),]
 huebert_expmt <- as.data.frame(huebert_expmt)
 
+#splitting rownames to get time
 huebert_rows <- rownames(huebert_expmt)
 split_huebert_rows <- strsplit(huebert_rows,"[.]")
 split_times_huebert <- lapply(split_huebert_rows, function(x) return(x[3]))
 
+#adding the time column
 huebert_times <- as.character(split_times_huebert)
 huebert_expmt2 <- mutate(huebert_expmt, row = rownames(huebert_expmt), time = huebert_times)
+#rename columns: use this one with times as separate column
+colnames(huebert_expmt2) <- huebert_expr$ID
+#use this for correlation matrix (no time column)
+colnames(huebert_expmt) <- huebert_expr$ID
 
+#reordering time columns to the front 
 huebert_expmt2 <- huebert_expmt2[,c(11236:11237, 1:11235)]
 
 ```
 
+## Hierarchical Clustering
+```{r hier_cluster}
+huebert.cor <- huebert_expmt %>% cor(use = "pairwise.complete.obs")
+huebert.clust <- hclust(as.dist(1 - huebert.cor), method="complete")
+huebert.dend <- as.dendrogram(huebert.clust)
+
+color.dend <- color_branches(huebert.dend, h=1.3, col=brewer.pal(8,"Dark2"))
+plot(color.dend, leaflab = "none")
+```
