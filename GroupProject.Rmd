@@ -17,16 +17,16 @@ library(org.Sc.sgd.db)
 ```
 
 ## Data Processing
-```{r data, echo=FALSE, warning=FALSE}
+```{r expression data, echo=FALSE, warning=FALSE}
 huebert_expr <- read.csv("huebert-2012-expression.csv", 
                          stringsAsFactors = FALSE, 
                          fileEncoding = "latin1")
 
-#dataset containing only coding genes
+# filter out noncoding (or unspecified) genes
 huebert_expr_coding <- huebert_expr[huebert_expr$coding.noncoding == "coding",]
 
 # transpose and convert matrix to data frame
-huebert_expmt <- huebert_expr_coding[,7:28] %>% sapply(as.numeric) %>% 
+huebert_expmt <- huebert_expr_coding[, 7:28] %>% sapply(as.numeric) %>% 
   t() %>% as.data.frame()
 
 # use this for correlation matrix (no time column)
@@ -35,18 +35,22 @@ colnames(huebert_expmt) <- huebert_expr_coding$ID
 # remove genes with NA's
 huebert_expmt <- huebert_expmt[, apply(huebert_expmt, 2, function(x) !any(is.na(x)))]
 
-# split rownames to get time
-huebert_times <- colnames(huebert_expr)[7:28] %>% strsplit("[.T]") %>% 
-  sapply(function(x) as.numeric(x[4]))
+# average repeated observations at 30 minutes for both conditions
+huebert_expmt[6, ] <- apply(huebert_expmt, 2, function(x) mean(c(x[6], x[9:11]), na.rm = TRUE))
+huebert_expmt[17, ] <- apply(huebert_expmt, 2, function(x) mean(c(x[17], x[20:22]), na.rm = TRUE))
+huebert_expmt <- huebert_expmt[-c(9:11, 20:22), ]
+
 # add the experiment condition and time columns
 huebert_expmt2 <- huebert_expmt
-huebert_expmt2$expt <- c(rep("wildtype", 11), rep("msn24", 11))
-huebert_expmt2$time <- huebert_times
+huebert_expmt2$expt <- c(rep("wildtype", 8), rep("msn24", 8))
+huebert_expmt2$time <- rownames(huebert_expmt) %>% strsplit("[.T]") %>% 
+  sapply(function(x) as.numeric(x[4]))
+
 # reorder
 huebert_expmt2 <- huebert_expmt2[,c(5614:5615, 1:5613)]
 ```
 
-```{r csv, echo=FALSE}
+```{r TF binding data, echo=FALSE}
 huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "latin1")
 ```
 
@@ -85,7 +89,7 @@ heatmap.2(huebert.cor,
           labRow = FALSE, labCol = FALSE)
 ```
 
-## K-medoid clustering
+## K-medoid Clustering
 ```{r k_clust, warning=FALSE}
 huebert.dist <- as.dist(1 - huebert.cor)
 huebert.kmedoids <- pam(huebert.dist, 19) # create k-medoids clustering with 8 clusters
