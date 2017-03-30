@@ -14,6 +14,8 @@ library(dendextend)
 library(RColorBrewer)
 library(gProfileR)
 library(org.Sc.sgd.db)
+
+color.scheme <- rev(brewer.pal(8, "RdBu"))
 ```
 
 ## Data Processing
@@ -48,6 +50,9 @@ huebert_expmt2$time <- rownames(huebert_expmt) %>% strsplit("[.T]") %>%
 
 # reorder
 huebert_expmt2 <- huebert_expmt2[,c(5614:5615, 1:5613)]
+
+# transform the data set to a long form
+huebert_long <- gather(huebert_expmt2, gene, expression, -time, -expt)
 ```
 
 ```{r TF binding data, echo=FALSE}
@@ -57,27 +62,29 @@ huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "l
 ## Hierarchical Clustering
 ```{r hier_cluster, warning=FALSE}
 huebert.cor <- huebert_expmt %>% cor(use = "pairwise.complete.obs")
+huebert.dist <- as.dist(1 - huebert.cor)
 #huebert.cor[is.na(huebert.cor)] <- -1  # assume all NA's in correlation matrix is -1
-huebert.clust <- hclust(as.dist(1 - huebert.cor), method = "complete")
+huebert.clust <- hclust(huebert.dist, method = "complete")
 huebert.dend <- as.dendrogram(huebert.clust)
 
-color.dend <- color_branches(huebert.dend, h = 1.7, col = brewer.pal(8, "Dark2"))
+color.dend <- color_branches(huebert.dend, h = 1.8, col = brewer.pal(8, "Dark2"))
 plot(color.dend, leaflab = "none")
 ```
 
 ```{r cluster_info, warning=FALSE}
-clusters1 <- cutree(color.dend, h = 1.7, order_clusters_as_data = FALSE)
-subtrees1 <- cut(color.dend, h = 1.7)
-sort(table(clusters1),decreasing = TRUE)  # get the cluster sizes 
-labels(subtrees1$lower[[1]])
-gene.clu1 <- lapply(subtrees1$lower, labels)
-#gene.clu1[[5]] # get cluster 5 genes
+hclusters <- cutree(huebert.dend, h = 1.8, order_clusters_as_data = FALSE)
+hclusters.df <- data.frame(gene = names(hclusters), cluster = hclusters, 
+                           stringsAsFactors = FALSE)
+
+# save the names of genes in each cluster
+hclusters.genes <- list()
+for (i in 1:9) {
+  hclusters.genes[[i]] <- filter(hclusters.df, cluster == i)$gene
+}
 ```
 
 ## Correlation Heatmap
 ```{r corr_heatmap, warning=FALSE}
-color.scheme <- rev(brewer.pal(8,"RdBu"))
-
 heatmap.2(huebert.cor, 
           Rowv = ladderize(huebert.dend), 
           Colv = ladderize(huebert.dend), 
@@ -89,19 +96,47 @@ heatmap.2(huebert.cor,
           labRow = FALSE, labCol = FALSE)
 ```
 
-## K-medoid Clustering
+## K-medoids Clustering
 ```{r k_clust, warning=FALSE}
-huebert.dist <- as.dist(1 - huebert.cor)
-huebert.kmedoids <- pam(huebert.dist, 19) # create k-medoids clustering with 8 clusters
+huebert.kmedoids <- pam(huebert.dist, 9)  # create k-medoids clustering with 9 clusters
 huebert.kclusters <- huebert.kmedoids$cluster
 
-# reorder correlation matrix by ordering given by clustering
-huebert.kmedoids.cor <- huebert.cor[order(huebert.kclusters),order(huebert.kclusters)]
+# save the names of genes in each cluster
+kclusters.genes <- list()
+for (i in 1:9) {
+  kclusters.genes[[i]] <- names(huebert.kclusters[huebert.kclusters == i])
+}
+```
+
+```{r corr_heatmap_k}
+# reorder correlation matrix by the ordering given by clustering
+huebert.kmedoids.cor <- huebert.cor[order(huebert.kclusters), order(huebert.kclusters)]
 
 heatmap.2(huebert.kmedoids.cor, Rowv = NULL, Colv = NULL, 
           dendrogram = "none", 
           trace = "none", density.info = "none",
           col = color.scheme, key = FALSE,
           labRow = FALSE, labCol = FALSE)
+```
+
+## Expression Heatmap
+```{r cluster dynamic, fig.height=15, fig.width=5}
+huebert_long %>% 
+  filter(gene %in% hclusters.genes[[1]] & expt == "msn24") %>% 
+  ggplot(aes(x = factor(time), y = gene)) + 
+    geom_tile(aes(fill = expression)) + 
+    scale_fill_gradientn(colors = color.scheme, limits = c(-4, 4)) + 
+    ggtitle("Msn2/4 Double Deletion, Hierarchical Cluster 1") + 
+    xlab("time") + 
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+huebert_long %>% 
+  filter(gene %in% kclusters.genes[[1]] & expt == "msn24") %>% 
+  ggplot(aes(x = factor(time), y = gene)) + 
+    geom_tile(aes(fill = expression)) + 
+    scale_fill_gradientn(colors = color.scheme, limits = c(-4, 4)) + 
+    ggtitle("Msn2/4 Double Deletion, K-medoids Cluster 1") + 
+    xlab("time") + 
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
 ```
 
