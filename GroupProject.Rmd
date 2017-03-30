@@ -162,3 +162,11 @@ huebert_long %>%
     xlab("time") + 
     theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
 ```
+
+## TF binding
+```{r trans_binding_data}
+huebert.tfs <- huebert_TF %>% 
+  dplyr::select(-Gene.Symbol, -Category, -Chromosome, -Loci.Start, -Loci.End, -Strand, -Distance.to.TSS, -PeakID, -Significantly.Enriched.over.WCE) %>% 
+  dplyr::rename(target = Name)
+```
+
