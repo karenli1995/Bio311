@@ -140,3 +140,25 @@ huebert_long %>%
     theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
 ```
 
+```{r cluster dynamic, fig.height=15, fig.width=5}
+samph <- sample(kclusters.genes[[1]], 150)
+sampk <- sample(kclusters.genes[[1]], 150)
+
+huebert_long %>% 
+  filter(gene %in% samph & expt == "wildtype") %>% 
+  ggplot(aes(x = factor(time), y = gene)) + 
+    geom_tile(aes(fill = expression)) + 
+    scale_fill_gradientn(colors = color.scheme, limits = c(-4, 4)) + 
+    ggtitle("Wild Type, Hierarchical Cluster 1") + 
+    xlab("time") + 
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+huebert_long %>% 
+  filter(gene %in% sampk & expt == "wildtype") %>% 
+  ggplot(aes(x = factor(time), y = gene)) + 
+    geom_tile(aes(fill = expression)) + 
+    scale_fill_gradientn(colors = color.scheme, limits = c(-4, 4)) + 
+    ggtitle("Wild Type, K-medoids Cluster 1") + 
+    xlab("time") + 
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+```
