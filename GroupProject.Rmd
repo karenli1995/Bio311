@@ -167,6 +167,6 @@ huebert_long %>%
 ```{r trans_binding_data}
 huebert.tfs <- huebert_TF %>% 
   dplyr::select(-Gene.Symbol, -Category, -Chromosome, -Loci.Start, -Loci.End, -Strand, -Distance.to.TSS, -PeakID, -Significantly.Enriched.over.WCE) %>% 
-  dplyr::rename(target = Name)
+  dplyr::rename(target = Gene.ID)
 ```
 
