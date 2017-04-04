@@ -18,6 +18,7 @@ library(org.Sc.sgd.db)
 color.scheme <- rev(brewer.pal(8, "RdBu"))
 ```
 
+# Group HW 1
 ## Data Processing
 ```{r expression data, echo=FALSE, warning=FALSE}
 huebert_expr <- read.csv("huebert-2012-expression.csv", 
@@ -53,10 +54,6 @@ huebert_expmt2 <- huebert_expmt2[,c(5614:5615, 1:5613)]
 
 # transform the data set to a long form
 huebert_long <- gather(huebert_expmt2, gene, expression, -time, -expt)
-```
-
-```{r TF binding data, echo=FALSE}
-huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "latin1")
 ```
 
 ## Hierarchical Clustering
@@ -140,7 +137,7 @@ huebert_long %>%
     theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
 ```
 
-```{r cluster dynamic, fig.height=15, fig.width=5}
+```{r cluster dynamic 2, fig.height=15, fig.width=5}
 samph <- sample(kclusters.genes[[1]], 150)
 sampk <- sample(kclusters.genes[[1]], 150)
 
@@ -163,7 +160,12 @@ huebert_long %>%
     theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
 ```
 
+# Group HW 2
 ## TF binding
+```{r TF binding data, echo=FALSE}
+huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "latin1")
+```
+
 ```{r trans_binding_data}
 huebert.tfs <- huebert_TF %>% 
   dplyr::select(-Gene.Symbol, -Category, -Chromosome, -Loci.Start, -Loci.End, -Strand, -Distance.to.TSS, -PeakID, -Significantly.Enriched.over.WCE) %>% 
