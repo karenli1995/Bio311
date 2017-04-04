@@ -14,6 +14,7 @@ library(dendextend)
 library(RColorBrewer)
 library(gProfileR)
 library(org.Sc.sgd.db)
+library(data.table)
 
 color.scheme <- rev(brewer.pal(8, "RdBu"))
 ```
@@ -168,5 +169,10 @@ huebert_long %>%
 huebert.tfs <- huebert_TF %>% 
   dplyr::select(-Gene.Symbol, -Category, -Chromosome, -Loci.Start, -Loci.End, -Strand, -Distance.to.TSS, -PeakID, -Significantly.Enriched.over.WCE) %>% 
   dplyr::rename(target = Gene.ID)
+```
+
+```{r harbison TF binding data, echo=FALSE}
+harbison_TF <- fread("harbison-2004-TFbinding-other.txt")
+harbison_TF2 <- fread("harbison-2004-TFbinding-YPD.txt")
 ```
 
