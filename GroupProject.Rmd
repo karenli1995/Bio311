@@ -11,7 +11,6 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(dendextend)
-library(RColorBrewer)
 library(gProfileR)
 library(org.Sc.sgd.db)
 library(data.table)
@@ -57,7 +56,8 @@ huebert_long <- gather(huebert_expmt2, gene, expression, -time, -expt)
 ```
 
 ```{r TF binding data, echo=FALSE}
-huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", fileEncoding = "latin1")
+huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", 
+                       stringsAsFactors = FALSE)
 ```
 
 ## Hierarchical Clustering
@@ -167,12 +167,26 @@ huebert_long %>%
 ## TF binding
 ```{r trans_binding_data}
 huebert.tfs <- huebert_TF %>% 
-  dplyr::select(-Gene.Symbol, -Category, -Chromosome, -Loci.Start, -Loci.End, -Strand, -Distance.to.TSS, -PeakID, -Significantly.Enriched.over.WCE) %>% 
-  dplyr::rename(target = Gene.ID)
+  dplyr::select(-(Gene.Symbol:PeakID)) %>% 
+  dplyr::rename(ID = Gene.ID)
 ```
 
 ```{r harbison TF binding data, echo=FALSE}
 harbison_TF <- fread("harbison-2004-TFbinding-other.txt")
-harbison_TF2 <- fread("harbison-2004-TFbinding-YPD.txt")
+class(harbison_TF) <- "data.frame"
+harbison_tfs <- harbison_TF %>% 
+  dplyr::rename(ID = V1, Name = V2, GO = V3)
+
+huebert_expr_subset <- semi_join(huebert_expr, harbison_tfs)
+
+
+msn2_h2o2 <- harbison_tfs %>% dplyr::select(1:3, MSN2_H2O2Hi, MSN2_H2O2Lo) %>% 
+  arrange(MSN2_H2O2Hi)
+
+msn2_binding <- harbison_tfs %>% dplyr::filter(name == "MSN2") %>% 
+  dplyr::select(-(1:3)) %>% t() %>% as.data.frame() %>% 
+  mutate(tf = rownames(.)) %>% dplyr::rename(pvalue = V1) %>% 
+  filter(pvalue <= 1e-2)
+msn4_binding <- harbison_tfs %>% dplyr::filter(name == "MSN4")
 ```
 
