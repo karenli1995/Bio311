@@ -190,3 +190,6 @@ msn2_binding <- harbison_tfs %>% dplyr::filter(name == "MSN2") %>%
 msn4_binding <- harbison_tfs %>% dplyr::filter(name == "MSN4")
 ```
 
+```{r huebert_activation_repressing, echo=FALSE, warning=FALSE}
+huebert_expr_time_subset <- semi_join(huebert_expr, huebert.tfs)
+```
