@@ -198,6 +198,7 @@ rownames(huebert_expr_subset) <- huebert_expr_subset_genes
 huebert_expr_subset <- huebert_expr_subset[apply(huebert_expr_subset, 1, function(x) !any(is.na(x))), ]
 
 p_values <- apply(huebert_expr_subset, 1, function(x) t.test(x[1:4], x[5:8])$p.value)
+hist(p_values, xlim = c(0,0.05), breaks=100)
 
 ```
 
