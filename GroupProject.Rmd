@@ -208,6 +208,38 @@ p_values <- apply(huebert_expr_subset, 1,
 genes_t <- sort(p_values) %>% .[1:100] %>% names()
 ```
 
+```{r clustering on the subset}
+huebert_t <- huebert_expr %>% filter(ID %in% genes_t) %>% dplyr::select(-(2:6))
+huebert_expmt_t <- huebert_t %>% dplyr::select(-1) %>% sapply(as.numeric) %>% 
+  t() %>% as.data.frame()
+colnames(huebert_expmt_t) <- huebert_t$ID
+
+huebert_expmt_t[6, ] <- apply(huebert_expmt_t, 2, function(x) mean(c(x[6], x[9:11])))
+huebert_expmt_t[17, ] <- apply(huebert_expmt_t, 2, function(x) mean(c(x[17], x[20:22])))
+huebert_expmt_t <- huebert_expmt_t[-c(9:11, 20:22), ]
+
+huebert_cor_t <- huebert_expmt_t %>% cor(use = "pairwise.complete.obs")
+huebert_dist_t <- as.dist(1 - huebert_cor_t)
+huebert_clust_t <- hclust(huebert_dist_t, method = "complete")
+huebert_dend_t <- as.dendrogram(huebert_clust_t)
+
+color_dend_t <- color_branches(huebert_dend_t, k = 5, 
+                               col = brewer.pal(5, "Dark2"))
+par(cex = 0.15)
+plot(color_dend_t, horiz = TRUE)
+
+hclusters_t <- cutree(huebert_dend_t, k = 5, order_clusters_as_data = FALSE)
+hclusters_df_t <- data.frame(gene = names(hclusters_t), cluster = hclusters_t, 
+                             stringsAsFactors = FALSE)
+
+hclusters_genes_t <- list()
+for (i in 1:9) {
+  hclusters_genes_t[[i]] <- filter(hclusters_df_t, cluster == i)$gene
+}
+
+>>>>>>> 83d3cf3921ce4313520a465c9186cbca4d6ec9ef
+```
+
 ```{r huebert_activation_repressing, echo=FALSE, warning=FALSE}
 huebert_expr_time_subset <- semi_join(huebert_expr, huebert.tfs)
 ```
