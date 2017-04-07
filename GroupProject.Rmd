@@ -197,7 +197,6 @@ huebert_expr_subset <- huebert_expr_subset[apply(huebert_expr_subset, 1,
 p_values <- apply(huebert_expr_subset, 1, 
                   function(x) t.test(x[1:4], x[5:8])$p.value)
 genes_t <- sort(p_values) %>% .[1:200] %>% names()
-
 ```
 
 ```{r}
@@ -209,6 +208,19 @@ msn2_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN2") %>%
   mutate(tf = rownames(.)) %>% dplyr::rename(pvalue = V1) %>% 
   filter(pvalue <= 1e-2)
 msn4_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN4")
+
+#filtered based on genes_t
+msn2_h2o2_sig_genes <- msn2_h2o2 %>% filter(ID %in% genes_t)
+
+harbison_tfs_sig_genes <- harbison_tfs %>% filter(ID %in% genes_t) %>% dplyr::select(-Name, -GO) 
+
+harbison.tfs.long <- harbison_tfs_sig_genes %>% 
+  tidyr::gather(TF, pvalue, -ID) %>% # cast to long format
+  dplyr::select(TF, ID, pvalue) # reorder columns
+
+harbison.tfs.long.sig <- 
+    harbison.tfs.long %>% 
+    filter(pvalue < 0.05 & TF != "MSN2_H2O2Hi" & TF != "MSN2_H2O2Lo")
 ```
 
 ```{r clustering on the subset}
@@ -246,6 +258,8 @@ profiles_t <- gprofiler(hclusters_genes_t[[5]],
                         src_filter = "GO:BP",
                         hier_filtering = "moderate")
 profiles_t$term.name
-
 ```
 
+```{r huebert_activation_repressing, echo=FALSE, warning=FALSE}
+huebert_expr_time_subset <- semi_join(huebert_expr, huebert.tfs)
+```
