@@ -166,6 +166,8 @@ huebert_long %>%
 
 ## TF binding
 ```{r trans_binding_data}
+huebert_TF <- read.csv("huebert-2012-TFbinding-annotated.csv", 
+                       stringsAsFactors = FALSE)
 huebert.tfs <- huebert_TF %>% 
   dplyr::select(-(Gene.Symbol:PeakID)) %>% 
   dplyr::rename(ID = Gene.ID)
@@ -186,6 +188,9 @@ msn2_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN2") %>%
   filter(pvalue <= 1e-2)
 msn4_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN4")
 
+huebert_expr <- read.csv("huebert-2012-expression.csv", 
+                         stringsAsFactors = FALSE, 
+                         fileEncoding = "latin1")
 huebert_expr_subset <- semi_join(huebert_expr, harbison_tfs) %>% 
   dplyr::select(ID, contains("T30"))
 huebert_expr_subset_genes <- huebert_expr_subset$ID
