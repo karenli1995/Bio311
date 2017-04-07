@@ -196,7 +196,7 @@ huebert_expr_subset <- huebert_expr_subset[apply(huebert_expr_subset, 1,
 
 p_values <- apply(huebert_expr_subset, 1, 
                   function(x) t.test(x[1:4], x[5:8])$p.value)
-genes_t <- sort(p_values) %>% .[1:100] %>% names()
+genes_t <- sort(p_values) %>% .[1:200] %>% names()
 ```
 
 ```{r}
@@ -208,6 +208,19 @@ msn2_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN2") %>%
   mutate(tf = rownames(.)) %>% dplyr::rename(pvalue = V1) %>% 
   filter(pvalue <= 1e-2)
 msn4_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN4")
+
+#filtered based on genes_t
+msn2_h2o2_sig_genes <- msn2_h2o2 %>% filter(ID %in% genes_t)
+
+harbison_tfs_sig_genes <- harbison_tfs %>% filter(ID %in% genes_t) %>% dplyr::select(-Name, -GO) 
+
+harbison.tfs.long <- harbison_tfs_sig_genes %>% 
+  tidyr::gather(TF, pvalue, -ID) %>% # cast to long format
+  dplyr::select(TF, ID, pvalue) # reorder columns
+
+harbison.tfs.long.sig <- 
+    harbison.tfs.long %>% 
+    filter(pvalue < 0.05 & TF != "MSN2_H2O2Hi" & TF != "MSN2_H2O2Lo")
 ```
 
 ```{r clustering on the subset}
@@ -238,8 +251,6 @@ hclusters_genes_t <- list()
 for (i in 1:9) {
   hclusters_genes_t[[i]] <- filter(hclusters_df_t, cluster == i)$gene
 }
-
->>>>>>> 83d3cf3921ce4313520a465c9186cbca4d6ec9ef
 ```
 
 ```{r huebert_activation_repressing, echo=FALSE, warning=FALSE}
