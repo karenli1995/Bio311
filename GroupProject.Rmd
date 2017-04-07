@@ -258,7 +258,6 @@ profiles_t <- gprofiler(hclusters_genes_t[[5]],
                         src_filter = "GO:BP",
                         hier_filtering = "moderate")
 profiles_t$term.name
-
 ```
 
 ```{r huebert_activation_repressing, echo=FALSE, warning=FALSE}
