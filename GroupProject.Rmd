@@ -226,17 +226,24 @@ huebert_dend_t <- as.dendrogram(huebert_clust_t)
 
 color_dend_t <- color_branches(huebert_dend_t, k = 5, 
                                col = brewer.pal(5, "Dark2"))
-par(cex = 0.15)
-plot(color_dend_t, horiz = TRUE)
+
+plot(color_dend_t, horiz = TRUE, leaflab = "none")
 
 hclusters_t <- cutree(huebert_dend_t, k = 5, order_clusters_as_data = FALSE)
 hclusters_df_t <- data.frame(gene = names(hclusters_t), cluster = hclusters_t, 
                              stringsAsFactors = FALSE)
 
 hclusters_genes_t <- list()
-for (i in 1:9) {
+for (i in 1:5) {
   hclusters_genes_t[[i]] <- filter(hclusters_df_t, cluster == i)$gene
 }
+
+profiles_t <- gprofiler(hclusters_genes_t[[5]], 
+                        organism = "scerevisiae",
+                        max_p_value = 0.05, 
+                        src_filter = "GO:BP",
+                        hier_filtering = "moderate")
+profiles_t$term.name
 
 ```
 
