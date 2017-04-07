@@ -179,15 +179,6 @@ class(harbison_TF) <- "data.frame"
 harbison_tfs <- harbison_TF %>% 
   dplyr::rename(ID = V1, Name = V2, GO = V3)
 
-msn2_h2o2 <- harbison_tfs %>% dplyr::select(1:3, MSN2_H2O2Hi, MSN2_H2O2Lo) %>% 
-  arrange(MSN2_H2O2Hi)
-
-msn2_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN2") %>% 
-  dplyr::select(-(1:3)) %>% t() %>% as.data.frame() %>% 
-  mutate(tf = rownames(.)) %>% dplyr::rename(pvalue = V1) %>% 
-  filter(pvalue <= 1e-2)
-msn4_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN4")
-
 huebert_expr <- read.csv("huebert-2012-expression.csv", 
                          stringsAsFactors = FALSE, 
                          fileEncoding = "latin1")
@@ -206,6 +197,17 @@ huebert_expr_subset <- huebert_expr_subset[apply(huebert_expr_subset, 1,
 p_values <- apply(huebert_expr_subset, 1, 
                   function(x) t.test(x[1:4], x[5:8])$p.value)
 genes_t <- sort(p_values) %>% .[1:100] %>% names()
+```
+
+```{r}
+msn2_h2o2 <- harbison_tfs %>% dplyr::select(1:3, MSN2_H2O2Hi, MSN2_H2O2Lo) %>% 
+  arrange(MSN2_H2O2Hi)
+
+msn2_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN2") %>% 
+  dplyr::select(-(1:3)) %>% t() %>% as.data.frame() %>% 
+  mutate(tf = rownames(.)) %>% dplyr::rename(pvalue = V1) %>% 
+  filter(pvalue <= 1e-2)
+msn4_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN4")
 ```
 
 ```{r clustering on the subset}
