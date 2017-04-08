@@ -264,7 +264,6 @@ profiles_t <- gprofiler(hclusters_genes_t[[5]],
 profiles_t$term.name
 ```
 
-<<<<<<< HEAD
 ```{r network}
 harbison_tfs <- fread("harbison-2004-TFbinding-other.txt")
 class(harbison_tfs) <- "data.frame"
@@ -310,8 +309,6 @@ n_df <- data.frame(from = tf_msn2_h2o2$TF[1:3], to = rep("MSN2", 3),
 
 ```
 
-=======
 ```{r huebert_activation_repressing, echo=FALSE, warning=FALSE}
 huebert_expr_time_subset <- semi_join(huebert_expr, huebert.tfs)
 ```
->>>>>>> 1bdcd4f84734968a03f69bc7548d3b9a8cd2cd0e
