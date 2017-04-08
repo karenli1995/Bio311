@@ -280,7 +280,7 @@ colnames(harbison_tfs_h2o2) <- colnames(harbison_tfs_h2o2) %>%
 n_df <- data.frame(from, to)
 for (i in 1:nrow(harbison_tfs_h2o2)) {
   for (j in 1:ncol(harbison_tfs_h2o2)) {
-    if (harbison_tfs_h2o2[i, j] <= 0.0001 & !is.na(harbison_tfs_h2o2[i, j])) {
+    if (harbison_tfs_h2o2[i, j] <= 0.00001 & !is.na(harbison_tfs_h2o2[i, j])) {
       n_df <- rbind(n_df, 
                     data.frame(from = colnames(harbison_tfs_h2o2)[j], 
                                to = rownames(harbison_tfs_h2o2)[i]))
@@ -290,7 +290,8 @@ for (i in 1:nrow(harbison_tfs_h2o2)) {
 
 g <- graph_from_data_frame(n_df)
 l <- layout_nicely(g)
-plot(g, layout = l, edge.arrow.size = .1, vertex.shape="none", vertex.label.cex = 0.3)
+plot(g, layout = l, edge.arrow.size = .1, 
+     vertex.shape = "none", vertex.label.cex = 0.5)
 ```
 
 ```{r}
