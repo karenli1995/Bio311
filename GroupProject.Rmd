@@ -294,7 +294,6 @@ plot(g1, layout = l1, edge.arrow.size = .15,
      rescale = TRUE)
 
 hist(degree(g1, mode = "out"), breaks = 1:vcount(g1)-1)
-table(degree(g1, mode = "out"))
 ```
 
 ```{r}
@@ -319,7 +318,7 @@ for (i in 1:nrow(harbison_tfs_h2o2lo)) {
 g2 <- graph_from_data_frame(n2_df)
 V(g2)$size <- degree(g2) * 0.3
 l2 <- layout_with_fr(g2)
-plot(g2, layout = l2, edge.arrow.size = .1, 
+plot(g2, layout = l2, edge.arrow.size = .15, 
      vertex.color = "gray", vertex.label.cex = 0.4, 
      mark.groups = c("MSN2"), mark.col = c("red"), rescale = TRUE)
 
