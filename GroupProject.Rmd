@@ -15,6 +15,7 @@ library(gProfileR)
 library(org.Sc.sgd.db)
 library(data.table)
 library(igraph)
+library(gridExtra)
 
 color.scheme <- rev(brewer.pal(8, "RdBu"))
 ```
@@ -179,7 +180,9 @@ harbison_TF <- fread("harbison-2004-TFbinding-other.txt")
 class(harbison_TF) <- "data.frame"
 harbison_tfs <- harbison_TF %>% 
   dplyr::rename(ID = V1, Name = V2, GO = V3)
+```
 
+```{r select the genes with significantly different expression levels at 30 min}
 huebert_expr <- read.csv("huebert-2012-expression.csv", 
                          stringsAsFactors = FALSE, 
                          fileEncoding = "latin1")
@@ -197,10 +200,10 @@ huebert_expr_subset <- huebert_expr_subset[apply(huebert_expr_subset, 1,
 
 p_values <- apply(huebert_expr_subset, 1, 
                   function(x) t.test(x[1:4], x[5:8])$p.value)
-genes_t <- sort(p_values) %>% .[1:200] %>% names()
+genes_t <- sort(p_values) %>% .[. <= 0.01] %>% names()
 ```
 
-```{r}
+```{r MSN2/4 H2O2 High}
 msn2_h2o2 <- harbison_tfs %>% dplyr::select(1:3, MSN2_H2O2Hi, MSN2_H2O2Lo) %>% 
   arrange(MSN2_H2O2Hi)
 
@@ -209,9 +212,10 @@ msn2_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN2") %>%
   mutate(tf = rownames(.)) %>% dplyr::rename(pvalue = V1) %>% 
   filter(pvalue <= 1e-2)
 msn4_binding <- harbison_tfs %>% dplyr::filter(Name == "MSN4")
+```
 
-#filtered based on genes_t
-msn2_h2o2_sig_genes <- msn2_h2o2 %>% filter(ID %in% genes_t)
+```{r transform the dataset to long form}
+msn2_h2o2_sig_genes <- msn2_h2o2 %>% filter(ID %in% genes_t) # filtered based on genes_t
 
 harbison_tfs_sig_genes <- harbison_tfs %>% filter(ID %in% genes_t) %>% dplyr::select(-Name, -GO) 
 
@@ -224,7 +228,7 @@ harbison.tfs.long.sig <-
     filter(pvalue < 0.05 & TF != "MSN2_H2O2Hi" & TF != "MSN2_H2O2Lo")
 ```
 
-```{r clustering on the subset}
+```{r clustering on the subset & plot the temporal pattern & GO analysis}
 huebert_t <- huebert_expr %>% filter(ID %in% genes_t) %>% dplyr::select(-(2:6))
 huebert_expmt_t <- huebert_t %>% dplyr::select(-1) %>% sapply(as.numeric) %>% 
   t() %>% as.data.frame()
@@ -239,29 +243,55 @@ huebert_dist_t <- as.dist(1 - huebert_cor_t)
 huebert_clust_t <- hclust(huebert_dist_t, method = "complete")
 huebert_dend_t <- as.dendrogram(huebert_clust_t)
 
-color_dend_t <- color_branches(huebert_dend_t, k = 5, 
-                               col = brewer.pal(5, "Dark2"))
+color_dend_t <- color_branches(huebert_dend_t, k = 4, 
+                               col = brewer.pal(4, "Dark2"))
 
 plot(color_dend_t, horiz = TRUE, leaflab = "none")
 
-hclusters_t <- cutree(huebert_dend_t, k = 5, order_clusters_as_data = FALSE)
+hclusters_t <- cutree(huebert_dend_t, k = 4, order_clusters_as_data = FALSE)
+table(hclusters_t)
 hclusters_df_t <- data.frame(gene = names(hclusters_t), cluster = hclusters_t, 
                              stringsAsFactors = FALSE)
 
 hclusters_genes_t <- list()
-for (i in 1:5) {
+for (i in 1:4) {
   hclusters_genes_t[[i]] <- filter(hclusters_df_t, cluster == i)$gene
 }
 
-profiles_t <- gprofiler(hclusters_genes_t[[5]], 
+huebert_long_t <- huebert_long %>% filter(gene %in% genes_t) %>% 
+  left_join(., hclusters_df_t) %>% arrange(cluster, gene)
+
+huebert_long_t %>% 
+  filter(expt == "msn24") %>% 
+  ggplot(aes(x = factor(time), y = gene)) + 
+    geom_tile(aes(fill = expression)) + 
+    scale_fill_gradientn(colors = color.scheme, limits = c(-3, 3)) + 
+    xlab("time") + 
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) + 
+    facet_wrap(~cluster, nrow = 1, ncol = 4) + 
+    ggtitle("Msn2/4 Double Deletion (by hierarchical cluster)")
+
+huebert_long_t %>% 
+  filter(expt == "wildtype") %>% 
+  ggplot(aes(x = factor(time), y = gene)) + 
+    geom_tile(aes(fill = expression)) + 
+    scale_fill_gradientn(colors = color.scheme, limits = c(-3, 3)) + 
+    xlab("time") + 
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) + 
+    facet_wrap(~cluster, nrow = 2, ncol = 2) + 
+    ggtitle("Wild Type (by hierarchical cluster)")
+
+
+profiles_t <- gprofiler(hclusters_genes_t[[4]], 
                         organism = "scerevisiae",
                         max_p_value = 0.05, 
-                        src_filter = "GO:BP",
+                        src_filter = "GO",
                         hier_filtering = "moderate")
-profiles_t$term.name
+profiles_t %>% dplyr::select(term.name, overlap.size)
+cat(harbison_tfs %>% filter(ID %in% hclusters_genes_t[[3]]) %>% .$Name %>% as.character(), "\n")
 ```
 
-```{r network}
+```{r network H2O2 High}
 harbison_tfs <- fread("harbison-2004-TFbinding-other.txt")
 class(harbison_tfs) <- "data.frame"
 harbison_tfs <- harbison_tfs %>% 
@@ -286,17 +316,39 @@ for (i in 1:nrow(harbison_tfs_h2o2hi)) {
 }
 
 g1 <- graph_from_data_frame(n1_df)
-V(g1)$size <- degree(g1) * 0.5
+V(g1)$size <- degree(g1, mode = "out") * 0.5
 l1 <- layout_with_fr(g1)
-plot(g1, layout = l1, edge.arrow.size = .15, 
+plot(g1, layout = l1, 
+     edge.arrow.size = .05, 
+     edge.color = "orange", 
+     vertex.color = "gray", 
+     vertex.frame.color = NA, 
+     vertex.label = ifelse(degree(g1, mode = "out") > 1 | V(g1)$name == "TOM1", 
+                           V(g1)$name, NA), 
+     vertex.label.cex = 0.4, 
+     mark.groups = c("MSN2"), 
+     mark.shape = 1, 
+     mark.col = c("red"), 
+     mark.expand = 15)
+g1_sub <- induced_subgraph(g1, 
+                           vid = c("MSN2", "MSN4", "AFT2", "RCS1", 
+                                   neighbors(g1, "MSN2", mode = "all") %>% names() %>% as.vector(), 
+                                   neighbors(g1, "MSN4", mode = "all") %>% names() %>% as.vector(), 
+                                   neighbors(g1, "AFT2", mode = "all") %>% names() %>% as.vector(), 
+                                   neighbors(g1, "RCS1", mode = "all") %>% names() %>% as.vector()))
+l1_sub <- layout_with_fr(g1_sub)
+plot(g1_sub, layout = l1_sub, edge.arrow.size = .1, 
      vertex.color = "gray", vertex.label.cex = 0.4, 
-     mark.groups = c("MSN2", "MSN4"), mark.col = c("red", "green"), 
-     rescale = TRUE)
+     mark.groups = c("MSN2", "MSN4"), 
+     mark.shape = 1, 
+     mark.col = c("red", "green"))
 
-hist(degree(g1, mode = "out"), breaks = 1:vcount(g1)-1)
+table(degree(g1, mode = "in"))
+
+c("CTT1", "YFR017C", "MGA1", "NVJ1")
 ```
 
-```{r}
+```{r network H2O2 Low}
 harbison_tfs_h2o2lo <- harbison_tfs %>% dplyr::select(2, contains("H2O2Lo"))
 harbison_tfs_h2o2lo <- harbison_tfs_h2o2lo %>% filter(Name != "#REF!") %>% unique()
 rownames(harbison_tfs_h2o2lo) <- harbison_tfs_h2o2lo$Name
@@ -318,14 +370,23 @@ for (i in 1:nrow(harbison_tfs_h2o2lo)) {
 g2 <- graph_from_data_frame(n2_df)
 V(g2)$size <- degree(g2) * 0.3
 l2 <- layout_with_fr(g2)
-plot(g2, layout = l2, edge.arrow.size = .15, 
-     vertex.color = "gray", vertex.label.cex = 0.4, 
-     mark.groups = c("MSN2"), mark.col = c("red"), rescale = TRUE)
+plot(g2, layout = l2, 
+     edge.arrow.size = .05, 
+     edge.color = "orange", 
+     vertex.color = "gray", 
+     vertex.frame.color = NA, 
+     vertex.label = ifelse(degree(g2, mode = "out") > 1, 
+                           V(g2)$name, NA), 
+     vertex.label.cex = 0.4, 
+     mark.groups = c("MSN2"), 
+     mark.shape = 1, 
+     mark.col = c("red"), 
+     mark.expand = 15)
 
-
+table(degree(g2, mode = "out"))
 ```
 
-```{r}
+```{r Upstream/Downstream of MSN2}
 n_df <- data.frame(from, to)
 msn2_genes_h2o2 <- harbison_tfs_h2o2 %>% dplyr::select(1:3, MSN2) %>% 
   arrange(MSN2)
@@ -340,8 +401,4 @@ tf_msn2_h2o2 <- harbison_tfs_h2o2 %>% filter(Name == "MSN2") %>%
 n_df <- data.frame(from = tf_msn2_h2o2$TF[1:3], to = rep("MSN2", 3), 
                    stringsAsFactors = FALSE) %>% rbind(n_df)
 
-```
-
-```{r huebert_activation_repressing, echo=FALSE, warning=FALSE}
-huebert_expr_time_subset <- semi_join(huebert_expr, huebert.tfs)
 ```
